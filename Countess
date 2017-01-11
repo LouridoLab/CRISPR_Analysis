@@ -1,0 +1,95 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use Getopt::Std;
+
+my ($options, %options, $dirname, $listname, $outdir, $filename);
+
+#l is list of in 3 column format divided by spaces as: "sg# name sequence"
+#d is the directory where the files are found
+
+getopts("l:d:",\%options);
+
+$dirname=$options{d};
+chomp $dirname;
+
+$listname=$options{l};
+chomp $listname;
+
+open LIST, $listname or die "Couldn't open list $listname: $!\n";
+
+#make reference hashes
+my %hash_list;
+my %hash_name;
+my %hash_sgRef;
+my %hash_genes;
+my $sgCount=0; #keeps a count of the number of guides
+$/ = "\n";
+while (<LIST>) {
+  chomp;
+  my $seq;
+  my ($key, $val1, $val2) = split /\s/;
+  my $sgRef=$val1;
+  my $length = length($val2);
+  if ($length == 20) {
+    $seq = reverse ($val2);}
+  elsif ($val2 =~ /[ATGC]{20}$/mg) {
+    $seq = reverse ($&);}
+  $seq =~ tr/ACGT/TGCA/;
+  $sgCount++;
+  $hash_list{$seq} = 0;
+  $hash_sgRef{$seq} = $sgRef;
+  $hash_name{$sgRef} = $val1;
+  if (! $hash_genes{$val1}) {
+    $hash_genes{$val1} = ();
+  }
+}
+
+close LIST;
+
+#make temp and output directory
+$outdir = $dirname."_Counted";
+$outdir =~ s/\///g;
+mkdir $outdir;
+
+#generate a results file to monitor progresss of the program
+open OUT, ">CountessResults" or die "Couldn't open file: $!\n";
+#enter the column names in the results file
+print OUT "FileName\tMatchedSequences\tNotMatchedSequences\tPercentMatched\n";
+
+#open the directory containing the FASTQ files and itterate through them
+my $t1 = time;
+opendir DIR, $dirname or die "Couldn't open directory:$!\n";
+while ($filename = readdir DIR) {
+  if ($filename =~ /\.fastq/mg) { 
+  open FILE, "$dirname/$filename" or die "Couldn't open file $filename: $!\n";
+  my %hash_local = %hash_list;
+  my $matched = 0; 
+  my $unmatched = 0;
+#count the occurence of each sgRNA in a given FASTQ file
+  while (<FILE>) {
+    if (/^[ATGC]{20}/mg) {
+      my $seq = $&;
+      if (exists $hash_local{$seq}) {
+	    $hash_local{$seq}++;
+	    $matched++;
+	  } else {$unmatched++}
+    }}
+  my $outfilename = $filename;
+  $outfilename =~ s/\.fastq//g;
+#save a new file containing the sgRNA occurences in a given FASTQ file
+  open OUT2, ">$outdir/$outfilename" or die "Couldn't open file $outfilename: $!\n";
+  foreach (sort keys %hash_local) {
+    print OUT2 "$hash_sgRef{$_}\t$hash_local{$_}\n";
+  }
+  my $percent_matched = 100*($matched/($matched+$unmatched));
+#write the results into the results file
+  print OUT "$filename\t$matched\t$unmatched\t$percent_matched\n";
+  close OUT2;
+}}
+closedir DIR;
+
+#calculate elapsed time for the program
+my $t2 = time;
+my $t3 = $t2 - $t1;
+print "\nThe program was completed in $t3 sec\n";
