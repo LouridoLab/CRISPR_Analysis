@@ -1,28 +1,51 @@
+
 #################### USER-DEFINED VARIABLES ####################
-## Define the local folder 
-setwd("~/Desktop/CRISPR Analysis/")
+
+## Define the local directory. If the local directory is on the desktop, replace "CRISPR Analysis" with the name of your directory. 
+setwd("~/Desktop/CRISPR Analysis/") # Modify the text in quotations
 
 ## Define the directory that contains the FASTQ files
-dir.name <- "FASTQ"
+dir.name <- "FASTQ" # Modify the text in quotations
 
 ## Define the file containing the sgRNA sequences
-lib.name <-"sgRNAs_nr_empty"
+lib.name <-"sgRNAs_nr_empty" # Modify the text in quotations
 
 ## Indicate the file names for the different samples exclude the *.fastq extension
-L <- "CGTGAT_L1"
-P3 <- "Day6cat"
+L <- "B4_L" # Modify the text in quotations
+
+P3 <- "B4_P3" # Modify the text in quotations
+
 ################################################################
+
+## Retrieve the contents of the local directory.
+file.contents <- list.files()
+
+## Check for the presence of the directory containing the FASTQ files
+try(if(!(dir.name %in% file.contents)) stop("ERROR: Directory not found!"))
+
+## Check for the presence of the file containing the sgRNA sequences
+try(if(!(lib.name %in% file.contents)) stop("ERROR: sgRNA file not found!"))
+
+## Retrieve the contents of the directory containing the FASTQ files
+file.contents <- list.files(dir.name)
+
+## Check for the presence of the first sample
+try(if(!(paste0(L,".fastq") %in% file.contents)) stop("ERROR: Sample file not found!")) 
+
+## Check for the presence of the second sample
+try(if(!(paste0(P3,".fastq") %in% file.contents)) stop("ERROR: Sample file not found!")) 
+
 
 ## Ensure that Countess is executable
 system(command = "chmod 770 Countess")
 
-## Run Countess on the FASTQ files found in the defined directory.
+## Run Countess on the FASTQ files found in the defined directory
+
 com <- paste("./Countess -l ",lib.name, " -d ", dir.name)
 system(command = com)
 
 ## Aggregate samples into data frame "DF.sg"
 DF.sg <- data.frame()
-
 count.dir.name <- paste(dir.name, "_Counted", sep = "")
 file_list <- list.files(path = count.dir.name)
 
@@ -62,10 +85,10 @@ for (i in 1:ncol(DF.sg))
 ## Log2 transform
 DF.sg <- log2(DF.sg)
 
-## Define the quartile to exclude
-Q <- 0.05 #quartile to be used in pruning
+## Define the quantile to exclude
+Q <- 0.05 #quantile to be used in pruning
 
-## Remove the sgRNAs in the lowest quartile of the library
+## Remove the sgRNAs in the lowest quantile of the library
 DF.sg <- DF.sg[DF.sg[,L] > quantile(DF.sg[,L], Q, na.rm = T),]
 
 ##Calculate fold change
@@ -112,7 +135,7 @@ for (i in 1:length(DF.genes$ID))
 DF.genes <- DF.genes[order(DF.genes$phenotype),]
 DF.genes$pos <- c(1:length(DF.genes$ID))
 
-## Deffine parameters for graphing and plot
+## Define parameters for graphing and plot
 SE.up = DF.genes$phenotype + DF.genes$sem
 SE.dn = DF.genes$phenotype - DF.genes$sem
 plot(DF.genes$phenotype~DF.genes$pos,pch=20, cex=0.1, las=1, ylab="phenotype", xlab="rank-ordered genes")
@@ -123,11 +146,11 @@ points(DF.genes$phenotype~DF.genes$pos, pch=20, cex=.5)
 Neg.Ctrl.Genes <- c("TGGT1_292055","TGGT1_295760","TGGT1_217600","TGGT1_240390","TGGT1_232130","TGGT1_235380","TGGT1_225490","TGGT1_205380","TGGT1_297880","TGGT1_255190","TGGT1_283510","TGGT1_246940","TGGT1_228400","TGGT1_243400","TGGT1_309870","TGGT1_253770","TGGT1_306620","TGGT1_305860","TGGT1_205480","TGGT1_310160","TGGT1_286590","TGGT1_201840","TGGT1_205250","TGGT1_233030","TGGT1_260820","TGGT1_262730","TGGT1_204130","TGGT1_277080","TGGT1_263180","TGGT1_250880","TGGT1_227620","TGGT1_312480","TGGT1_309590","TGGT1_233460","TGGT1_315760","TGGT1_294690","TGGT1_254555","TGGT1_282055","TGGT1_254470","TGGT1_319560")
 
 Neg.Ctrl.Genes <- subset(DF.genes, DF.genes$ID %in% Neg.Ctrl.Genes)
-Reff.mean <- mean(Neg.Ctrl.Genes$phenotype)
+Ref.mean <- mean(Neg.Ctrl.Genes$phenotype)
 
 points(Neg.Ctrl.Genes$pos, Neg.Ctrl.Genes$phenotype, col="orange", pch=19)
 
-abline(h=Reff.mean, lty=2, lwd=2, col="orange")
+abline(h=Ref.mean, lty=2, lwd=2, col="orange")
 
 legend("bottomright", inset=.08, title="", c("mean phenotype", "known dispensable"), horiz=F, cex=1, bty="n", lty=2, lwd=2, col=c("orange", "transparent"), text.col="transparent")
 legend("bottomright", inset=.08, title="", c("mean phenotype", "known dispensable"), horiz=F, cex=1, bty="n", pch=19, col=c("transparent", "orange"))
@@ -174,10 +197,11 @@ points(DF.genes$phenotype~DF.genes$pos, pch=20, cex=.5)
 points(fitness.conferring$pos, fitness.conferring$phenotype, col="red", pch=19)
 points(Neg.Ctrl.Genes$pos, Neg.Ctrl.Genes$phenotype, col="orange", pch=19)
 
-abline(h=Reff.mean, lty=2, lwd=2, col="orange")
+abline(h=Ref.mean, lty=2, lwd=2, col="orange")
 
 legend("bottomright", inset=.08, title="", c("mean phenotype", "known dispensable", "fitness-conferring"), horiz=F, cex=1, bty="n", lty=2, lwd=2, col=c("orange", "transparent", "transparent"), text.col="transparent")
 legend("bottomright", inset=.08, title="", c("mean phenotype", "known dispensable", "fitness-conferring"), horiz=F, cex=1, bty="n", pch=19, col=c("transparent", "orange", "red"))
 
 ## Save data frame
 write.csv(DF.genes, file="GenePhenotypes.csv", row.names=F)
+
