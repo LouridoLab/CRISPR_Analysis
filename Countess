@@ -3,18 +3,22 @@ use warnings;
 use strict;
 use Getopt::Std;
 
-my ($options, %options, $dirname, $listname, $outdir, $filename);
+my ($options, %options, $dirname, $listname, $outdir, $filename, $resultsdir);
 
 #l is list of in 3 column format divided by spaces as: "sg# name sequence"
 #d is the directory where the files are found
 
-getopts("l:d:",\%options);
+getopts("l:d:o:",\%options);
 
 $dirname=$options{d};
 chomp $dirname;
 
 $listname=$options{l};
 chomp $listname;
+
+$resultsdir=$options{o};
+chomp $resultsdir;
+
 
 open LIST, $listname or die "Couldn't open list $listname: $!\n";
 
@@ -48,12 +52,14 @@ while (<LIST>) {
 close LIST;
 
 #make temp and output directory
-$outdir = $dirname."_Counted";
-$outdir =~ s/\///g;
+$outdir = $dirname;
+my @dirname = split /\//, $outdir;
+$outdir = splice @dirname, -1;
+$outdir = $outdir."_Counted";
 mkdir $outdir;
 
 #generate a results file to monitor progresss of the program
-open OUT, ">CountessResults" or die "Couldn't open file: $!\n";
+open OUT, ">$resultsdir/CountessResults" or die "Couldn't open file: $!\n";
 #enter the column names in the results file
 print OUT "FileName\tMatchedSequences\tNotMatchedSequences\tPercentMatched\n";
 
