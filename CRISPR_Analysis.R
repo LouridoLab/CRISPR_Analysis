@@ -1,11 +1,11 @@
 ## Check for required R package
 
 if(!library(ineq, logical.return=T))
-  {
+{
   stop("\nPlease install the required package ineq.\n")
-  } else {
+} else {
   cat("\nAll required packages have been installed.\n")
-  }
+}
 
 #################### OBTAIN & CHECK USER-DEFINED VARIABLES ####################
 
@@ -84,14 +84,14 @@ for (i in 1:ncol(DF.sg))
 }
 
 ## Calculate Gini indices and print out Lorenz curve plot
-gini.L <- signif(Gini(DF.sg$B4_L), digits=4)
-gini.P3 <- signif(Gini(DF.sg$B4_P3), digits=4)
+gini.L <- signif(Gini(DF.sg[,L]), digits=4)
+gini.P3 <- signif(Gini(DF.sg[,P3]), digits=4)
 cat("\nThe following Gini indices have been calculated for the samples:\n\t", L, "\t", gini.L, "\n\t", P3, "\t", gini.P3, "\n")
 
 pdf(paste0(out.dir,"/LorenzCurves.pdf"))
 par(pty="s")
-plot(Lc(DF.sg$B4_L), lwd=3, col="sky blue")
-lines(Lc(DF.sg$B4_P3), lwd=3, col="orange")
+plot(Lc(DF.sg[,L]), lwd=3, col="sky blue")
+lines(Lc(DF.sg[,P3]), lwd=3, col="orange")
 legend("topleft", title="", c("reference", "experimental sample"),  bty="n", lwd=3, col=c("sky blue", "orange"))
 dev.off()
 
