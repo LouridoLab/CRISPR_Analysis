@@ -52,11 +52,10 @@ while (<LIST>) {
 close LIST;
 
 #make temp and output directory
-#$outdir = $dirname;
-#my @dirname = split /\//, $outdir;
-#$outdir = splice @dirname, -1;
-#$outdir = $outdir."_Counted";
-$outdir = $dirname."_Counted";
+$outdir = $dirname;
+my @dirname = split /\//, $outdir;
+$outdir = splice @dirname, -1;
+$outdir = $outdir."_Counted";
 mkdir $outdir;
 
 #generate a results file to monitor progresss of the program
